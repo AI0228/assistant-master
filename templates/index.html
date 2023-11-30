@@ -1,0 +1,123 @@
+<html>
+
+<head>
+    <title>New Assistant UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body class="container mx-auto">
+    <div class="flex flex-row">
+        <div class="w-1/4 py-8">
+            <div class="flex flex-col">
+                <form action="{{ url_for('file_upload') }}" method="post" enctype="multipart/form-data">
+                    <label class="block">
+                        <span class="sr-only">Choose File</span>
+                        <input type="file"
+                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                            accept=".pdf" name="file" />
+                    </label>
+                    <button
+                        class="text-sm mx-1 mt-4 px-2 py-1 rounded-full border border-blue-100 w-full text-blue-700 font-semibold bg-blue-100">Upload</button>
+                </form>
+                <label class="mx-4 text-lg font-serif tracking-2">File List</label>
+                {% for file in files %}
+                <div class="mx-4 py-2 border-b-2 px-4 font-serif flex justify-between">
+                    <span>{{file.name}}</span>
+                    <span><button class="text-xs text-red-500 px-2 py-1 bg-blue-100 rounded-lg"
+                            onclick="delete_file('{{file.id}}')">Delete</button></span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="w-3/4">
+            <div class="shadow-soft-xl mx-4 mt-4 relative flex flex-col break-words rounded-2xl border-2 w-full border-solid bg-white px-4 overflow-y-auto"
+                style="height: 90vh;" id="chatroom">
+
+            </div>
+            <div>
+                <input type="text" id="query"
+                    class="border-2 text-xs rounded-lg border-black bg-white py-2 mx-4 w-full px-4 mt-4">
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    const queryInput = document.querySelector('#query');
+
+    function delete_file(id) {
+        $.ajax({
+            url: "/file_delete",
+            type: "POST",
+            data: {
+                id: id,
+            },
+            success: function (response) {
+                // Handle the response from the server
+                console.log(response);
+            },
+            error: function (xhr) {
+                // Handle any errors that occur during the request
+                console.log(xhr.responseText);
+            }
+        });
+    }
+
+    queryInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            if ($('#query').val() != "") {
+
+                var query = $('#query').val();
+
+                var data = {
+                    "query": query,
+                };
+
+                var htmlContent = "<div class='flex justify-start p-6 px-0 pb-2 w-full'><span></span>";
+                htmlContent += "<span class='rounded-xl py-2 px-4 text-sm mx-2 overflow-wrap bg-gray-200'><label>";
+                htmlContent += query;
+                htmlContent += "</label></span></div>";
+
+                $('#chatroom').append(htmlContent);
+
+                $('#query').val("");
+                $('#query').prop('disabled', true);
+
+                var scrollHeight = $('#chatroom')[0].scrollHeight;
+                $('#chatroom').scrollTop(scrollHeight);
+
+                $.ajax({
+                    url: "/query",
+                    type: "POST",
+                    data: {
+                        query: query,
+                    },
+                    success: function (response) {
+                        // Handle the response from the server
+                        var htmlContent = "<div class='flex justify-end p-6 px-0 pb-2 w-full text-white'><span></span>";
+                        htmlContent += "<span class='rounded-xl py-2 px-4 text-sm mx-2 overflow-wrap bg-black'><label>";
+                        htmlContent += response.answer;
+                        htmlContent += "</label></span></div>";
+
+                        $('#chatroom').append(htmlContent);
+                        $('#query').prop('disabled', false);
+
+                        var scrollHeight = $('#chatroom')[0].scrollHeight;
+                        $('#chatroom').scrollTop(scrollHeight);
+                    },
+                    error: function (xhr) {
+                        // Handle any errors that occur during the request
+                        console.log(xhr.responseText);
+                    }
+                });
+
+
+
+
+            }
+        }
+    });
+</script>
+
+</html>
